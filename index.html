@@ -2,23 +2,38 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Эко-Край | B2B Платформа</title>
     
-    <!-- Подключение Tailwind CSS для стилей -->
+    <!-- Подключение Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0f172a',
+                        darkcard: '#1e293b',
+                    }
+                }
+            }
+        }
+    </script>
     
-    <!-- Подключение React и ReactDOM -->
+    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
-    <!-- Babel для перевода JSX в понятный браузеру код -->
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
-        /* Скрытие полосы прокрутки для эстетики */
+        /* Убираем скроллбары, но оставляем функционал */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        body { -webkit-tap-highlight-color: transparent; }
         
         /* Анимации */
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
@@ -27,56 +42,79 @@
         .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
     </style>
 </head>
-<body class="bg-gray-200 min-h-screen flex justify-center items-center font-sans">
+<body class="bg-gray-100 dark:bg-black min-h-screen font-sans transition-colors duration-300">
 
-    <!-- Корневой элемент приложения -->
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- НАБОР ИКОНОК (SVG) ---
-        // Встроены прямо в код для автономной работы без npm
+        // --- ИКОНОК (SVG) ---
         const Icons = {
-            Leaf: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>,
-            ShoppingBag: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
-            Map: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>,
-            User: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-            ChevronRight: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
-            CheckCircle: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
-            Clock: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-            Droplets: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></svg>,
-            ArrowRight: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
-            Plus: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-            Minus: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-            Send: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
-            X: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-            Star: ({size, className, fill}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill={fill || "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
-            Phone: ({size, className}) => <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Leaf: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>,
+            ShoppingBag: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
+            Map: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>,
+            User: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+            ChevronRight: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+            CheckCircle: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>,
+            Clock: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            Droplets: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></svg>,
+            ArrowRight: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+            Plus: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Minus: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+            Send: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>,
+            X: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+            Star: (props) => <svg {...props} viewBox="0 0 24 24" fill={props.fill || "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+            Phone: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+            Sun: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+            Moon: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
+            Mail: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+            Briefcase: (props) => <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
         };
 
-        // --- ГЛАВНЫЙ КОМПОНЕНТ ПРИЛОЖЕНИЯ ---
+        // --- ЛОГОТИП КОМПАНИИ ---
+        const Logo = () => (
+            <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-emerald-600 dark:bg-emerald-500 rounded-lg flex items-center justify-center text-white shadow-md">
+                   <Icons.Leaf size={18} strokeWidth={2.5} /> 
+                </div>
+                <div className="flex flex-col">
+                    <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white leading-none">Эко-Край</span>
+                    <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">B2B Farm</span>
+                </div>
+            </div>
+        );
+
         const App = () => {
             const [activeTab, setActiveTab] = useState('home');
             const [cart, setCart] = useState({});
             const [isCartOpen, setIsCartOpen] = useState(false);
             const [orderSent, setOrderSent] = useState(false);
+            const [theme, setTheme] = useState('light');
+            const [selectedCategory, setSelectedCategory] = useState('Все');
 
-            // --- БЭКЕНД СИМУЛЯЦИЯ (LOCAL STORAGE) ---
-            // При загрузке восстанавливаем корзину
+            // --- LOCAL STORAGE & THEME ---
             useEffect(() => {
                 const savedCart = localStorage.getItem('ecoCart');
-                if (savedCart) {
-                    setCart(JSON.parse(savedCart));
-                }
+                if (savedCart) setCart(JSON.parse(savedCart));
+                
+                const savedTheme = localStorage.getItem('ecoTheme') || 'light';
+                setTheme(savedTheme);
+                document.documentElement.classList.toggle('dark', savedTheme === 'dark');
             }, []);
 
-            // При изменении корзины сохраняем её
             useEffect(() => {
                 localStorage.setItem('ecoCart', JSON.stringify(cart));
             }, [cart]);
 
-            // Данные (имитация базы данных)
+            const toggleTheme = () => {
+                const newTheme = theme === 'light' ? 'dark' : 'light';
+                setTheme(newTheme);
+                localStorage.setItem('ecoTheme', newTheme);
+                document.documentElement.classList.toggle('dark', newTheme === 'dark');
+            };
+
+            // --- ДАННЫЕ ---
             const products = [
                 { id: 1, name: 'Горох Мадрас', price: 140, unit: 'бокс', category: 'Микрозелень', tag: 'Хит', description: 'Сладкий, хрустящий, длинный ус.', image: '🌱', color: 'bg-green-100' },
                 { id: 2, name: 'Редис Санго', price: 150, unit: 'бокс', category: 'Микрозелень', tag: '', description: 'Острый вкус, фиолетовый лист.', image: '🌿', color: 'bg-purple-100' },
@@ -84,37 +122,28 @@
                 { id: 4, name: 'Щавель Кровавая Мэри', price: 180, unit: 'бокс', category: 'Микрозелень', tag: 'New', description: 'Кислинка и красные прожилки.', image: '🍃', color: 'bg-red-100' },
                 { id: 5, name: 'Виола (Микс)', price: 300, unit: 'упак', category: 'Цветы', tag: 'Декор', description: 'Разноцветные съедобные цветы.', image: '🌸', color: 'bg-indigo-100' },
                 { id: 6, name: 'Подсолнечник', price: 130, unit: 'бокс', category: 'Микрозелень', tag: 'Volume', description: 'Сочный, ореховый вкус.', image: '🌻', color: 'bg-yellow-100' },
+                { id: 7, name: 'Свекла Мангольд', price: 160, unit: 'бокс', category: 'Baby-leaf', tag: '', description: 'Нежный вкус, яркий стебель.', image: '🥬', color: 'bg-pink-100' },
+                { id: 8, name: 'Клубника', price: 800, unit: 'кг', category: 'Ягоды', tag: 'Сезон', description: 'Сладкая фермерская ягода.', image: '🍓', color: 'bg-red-200' },
             ];
 
-            const addToCart = (id) => {
-                setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
-            };
-
-            const removeFromCart = (id) => {
-                setCart(prev => {
+            const addToCart = (id) => setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+            const removeFromCart = (id) => setCart(prev => {
                 const newCart = { ...prev };
-                if (newCart[id] > 1) {
-                    newCart[id] -= 1;
-                } else {
-                    delete newCart[id];
-                }
+                if (newCart[id] > 1) newCart[id] -= 1;
+                else delete newCart[id];
                 return newCart;
-                });
-            };
+            });
 
             const clearCart = () => {
                 setCart({});
                 setOrderSent(false);
                 setIsCartOpen(false);
-                localStorage.removeItem('ecoCart'); // Очистка "БД"
+                localStorage.removeItem('ecoCart');
             };
 
             const handleOrder = () => {
-                // Имитация отправки данных на сервер
                 setOrderSent(true);
-                setTimeout(() => {
-                    clearCart();
-                }, 3000);
+                setTimeout(() => clearCart(), 3000);
             };
 
             const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
@@ -123,381 +152,484 @@
                 return total + (product ? product.price * qty : 0);
             }, 0);
 
-            // --- VIEW COMPONENTS ---
+            // Фильтрация
+            const filteredProducts = selectedCategory === 'Все' 
+                ? products 
+                : products.filter(p => p.category === selectedCategory);
+
+            // --- КОМПОНЕНТЫ ---
 
             const ViewContainer = ({ children, className = "" }) => (
-                <div className={`animate-fade-in ${className}`}>{children}</div>
+                <div className={`animate-fade-in w-full max-w-md mx-auto ${className}`}>{children}</div>
             );
 
+            // 1. ГЛАВНАЯ СТРАНИЦА
             const HomeView = () => (
                 <ViewContainer className="space-y-6 pb-28 pt-4">
-                {/* Hero Section */}
-                <div className="mx-4 relative group cursor-pointer" onClick={() => setActiveTab('catalog')}>
-                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-800 to-teal-900 rounded-3xl shadow-xl transform transition-transform group-hover:scale-[1.02]"></div>
-                    <div className="absolute top-0 right-0 opacity-10 transform translate-x-10 -translate-y-10 group-hover:rotate-12 transition-transform duration-700">
-                    <Icons.Leaf size={240} />
-                    </div>
-                    <div className="relative z-10 p-6 flex flex-col h-full min-h-[200px] justify-between">
-                    <div>
-                        <div className="flex items-center space-x-2 mb-3">
-                        <span className="px-2 py-0.5 bg-emerald-400/20 rounded text-emerald-100 text-[10px] font-bold tracking-wider uppercase border border-emerald-400/30">
-                            B2B Партнерство
-                        </span>
+                    {/* Hero Section */}
+                    <div className="mx-4 relative group cursor-pointer" onClick={() => setActiveTab('catalog')}>
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-800 to-teal-900 rounded-3xl shadow-xl transform transition-transform group-hover:scale-[1.01]"></div>
+                        <div className="absolute top-0 right-0 opacity-10 transform translate-x-10 -translate-y-10">
+                            <Icons.Leaf size={240} />
                         </div>
-                        <h1 className="text-3xl font-bold text-white leading-tight mb-2">
-                        Зелень без<br/>сюрпризов
-                        </h1>
-                        <p className="text-emerald-100/80 text-sm max-w-[85%]">
-                        Стабильное качество для HoReCa СПб. <br/>Доставка в день среза.
-                        </p>
+                        <div className="relative z-10 p-6 flex flex-col h-full min-h-[200px] justify-between">
+                            <div>
+                                <div className="flex items-center space-x-2 mb-3">
+                                    <span className="px-2 py-0.5 bg-emerald-400/20 rounded text-emerald-100 text-[10px] font-bold tracking-wider uppercase border border-emerald-400/30">
+                                        B2B Партнерство
+                                    </span>
+                                </div>
+                                <h1 className="text-3xl font-bold text-white leading-tight mb-2">
+                                    Качество,<br/>которым гордятся
+                                </h1>
+                                <p className="text-emerald-100/80 text-sm max-w-[85%]">
+                                    Сити-ферма полного цикла. <br/>Срез утром — доставка в обед.
+                                </p>
+                            </div>
+                            <div className="flex items-center text-white font-semibold text-sm mt-4">
+                                <span>Открыть каталог</span>
+                                <Icons.ArrowRight size={16} className="ml-2" />
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex items-center text-white font-semibold text-sm mt-4 group-hover:translate-x-1 transition-transform">
-                        <span>Перейти в каталог</span>
-                        <Icons.ArrowRight size={16} className="ml-2" />
-                    </div>
-                    </div>
-                </div>
 
-                {/* Trust Blocks */}
-                <div className="px-4">
-                    <div className="flex justify-between items-end mb-4">
-                    <h2 className="text-xl font-bold text-slate-800">Почему шефы с нами?</h2>
+                    {/* USP */}
+                    <div className="px-4">
+                        <div className="flex justify-between items-end mb-4">
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-white">Стандарты качества</h2>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                            {[
+                                { 
+                                    icon: <Icons.CheckCircle className="text-emerald-600" size={20} />, 
+                                    title: "Идеальная калибровка", 
+                                    desc: "Один размер, одна высота. Эстетика отдачи.",
+                                    bg: "bg-emerald-50 dark:bg-emerald-900/20"
+                                },
+                                { 
+                                    icon: <Icons.Clock className="text-blue-600" size={20} />, 
+                                    title: "Логистика Day-to-Day", 
+                                    desc: "Забудьте о стоп-листах. Доставка 7 дней в неделю.",
+                                    bg: "bg-blue-50 dark:bg-blue-900/20"
+                                },
+                                { 
+                                    icon: <Icons.Droplets className="text-teal-600" size={20} />, 
+                                    title: "Гидропоника", 
+                                    desc: "Чистый продукт без грунта. Стерильно для кухни.",
+                                    bg: "bg-teal-50 dark:bg-teal-900/20"
+                                }
+                            ].map((item, idx) => (
+                                <div key={idx} className={`p-4 rounded-2xl flex items-start space-x-4 ${item.bg} border border-transparent dark:border-white/5`}>
+                                    <div className="bg-white dark:bg-slate-800 p-2 rounded-xl shadow-sm shrink-0">
+                                        {item.icon}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-slate-900 dark:text-gray-100 text-sm">{item.title}</h3>
+                                        <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">{item.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-3">
-                    {[
-                        { 
-                        icon: <Icons.CheckCircle className="text-emerald-600" size={20} />, 
-                        title: "Калибровка 100%", 
-                        desc: "Одинаковая высота и плотность. Идеально для отдачи блюд.",
-                        bg: "bg-emerald-50"
-                        },
-                        { 
-                        icon: <Icons.Clock className="text-blue-600" size={20} />, 
-                        title: "Day-to-Day Логистика", 
-                        desc: "Утренний срез — доставка к обеду. Никаких стоп-листов.",
-                        bg: "bg-blue-50"
-                        },
-                        { 
-                        icon: <Icons.Droplets className="text-teal-600" size={20} />, 
-                        title: "Стерильная чистота", 
-                        desc: "Растем на агровате/джуте. Никакой земли на кухне.",
-                        bg: "bg-teal-50"
-                        }
-                    ].map((item, idx) => (
-                        <div key={idx} className={`p-4 rounded-2xl flex items-start space-x-4 ${item.bg} border border-transparent hover:border-black/5 transition-colors`}>
-                        <div className="bg-white p-2 rounded-xl shadow-sm shrink-0">
-                            {item.icon}
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-slate-900 text-sm">{item.title}</h3>
-                            <p className="text-xs text-slate-500 mt-1 leading-relaxed">{item.desc}</p>
-                        </div>
-                        </div>
-                    ))}
-                    </div>
-                </div>
 
-                {/* Lead Magnet */}
-                <div className="mx-4 bg-slate-900 rounded-2xl p-6 relative overflow-hidden shadow-lg">
-                    <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-emerald-500 rounded-full blur-3xl opacity-20"></div>
-                    <div className="relative z-10 text-center">
-                    <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-emerald-400">
-                        <Icons.Star size={24} fill="currentColor" />
+                    {/* Lead Magnet */}
+                    <div className="mx-4 bg-slate-900 dark:bg-darkcard rounded-2xl p-6 relative overflow-hidden shadow-lg border border-slate-800">
+                        <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-emerald-500 rounded-full blur-3xl opacity-20"></div>
+                        <div className="relative z-10 text-center">
+                            <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-emerald-400 border border-slate-700">
+                                <Icons.Star size={24} fill="currentColor" />
+                            </div>
+                            <h3 className="text-white font-bold text-lg mb-2">Сомневаетесь в качестве?</h3>
+                            <p className="text-slate-400 text-sm mb-5 leading-relaxed">
+                                Закажите бесплатный дегустационный бокс для вашего ресторана.
+                            </p>
+                            <button 
+                                onClick={() => setActiveTab('tasting')} 
+                                className="w-full bg-emerald-500 text-white font-bold py-3 rounded-xl hover:bg-emerald-400 transition shadow-lg shadow-emerald-900/50 active:scale-95"
+                            >
+                                Оформить пробник
+                            </button>
+                        </div>
                     </div>
-                    <h3 className="text-white font-bold text-lg mb-2">Тест-драйв качества</h3>
-                    <p className="text-slate-400 text-sm mb-5 leading-relaxed">
-                        Бесплатно привезем бокс с 3 видами зелени, чтобы вы убедились в качестве.
-                    </p>
-                    <button onClick={() => setActiveTab('catalog')} className="w-full bg-emerald-500 text-white font-bold py-3 rounded-xl hover:bg-emerald-400 transition shadow-lg shadow-emerald-900/50 active:scale-95">
-                        Заказать дегустацию
-                    </button>
-                    </div>
-                </div>
                 </ViewContainer>
             );
 
+            // 2. КАТАЛОГ
             const CatalogView = () => (
                 <ViewContainer className="pb-28 pt-2 px-2">
-                <div className="sticky top-14 bg-gray-50/95 backdrop-blur-sm z-20 py-2 px-2 mb-2">
-                    <div className="flex overflow-x-auto space-x-2 pb-2 scrollbar-hide">
-                    {['Все', 'Микрозелень', 'Цветы', 'Baby-leaf', 'Ягоды'].map((cat, idx) => (
-                        <button 
-                        key={idx}
-                        className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                            idx === 0 
-                            ? 'bg-slate-900 text-white shadow-md' 
-                            : 'bg-white text-slate-600 border border-slate-200 shadow-sm hover:bg-slate-100'
-                        }`}
-                        >
-                        {cat}
-                        </button>
-                    ))}
+                    <div className="sticky top-[60px] bg-gray-100/95 dark:bg-black/95 backdrop-blur-sm z-20 py-2 px-2 mb-2 -mx-2">
+                        <div className="flex overflow-x-auto space-x-2 pb-2 scrollbar-hide">
+                            {['Все', 'Микрозелень', 'Цветы', 'Baby-leaf', 'Ягоды'].map((cat, idx) => (
+                                <button 
+                                    key={idx}
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                                        selectedCategory === cat
+                                        ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-md' 
+                                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm'
+                                    }`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-3 px-2">
-                    {products.map(product => (
-                    <div key={product.id} className="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 flex flex-col relative group">
-                        {product.tag && (
-                        <span className="absolute top-3 left-3 bg-slate-900 text-white text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider z-10 shadow-sm">
-                            {product.tag}
-                        </span>
+                    <div className="grid grid-cols-2 gap-3 px-2">
+                        {filteredProducts.length > 0 ? (
+                            filteredProducts.map(product => (
+                                <div key={product.id} className="bg-white dark:bg-darkcard rounded-2xl p-3 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col relative group">
+                                    {product.tag && (
+                                        <span className="absolute top-3 left-3 bg-slate-900 dark:bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider z-10 shadow-sm">
+                                            {product.tag}
+                                        </span>
+                                    )}
+                                    <div className={`aspect-square rounded-xl ${product.color} dark:bg-opacity-20 flex items-center justify-center mb-3 text-5xl`}>
+                                        {product.image}
+                                    </div>
+                                    
+                                    <div className="flex-grow flex flex-col justify-between">
+                                        <div>
+                                            <h3 className="font-bold text-slate-800 dark:text-white text-sm leading-tight mb-1">{product.name}</h3>
+                                            <p className="text-[10px] text-slate-400 line-clamp-2 mb-2">{product.description}</p>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center mt-2">
+                                            <div className="flex flex-col">
+                                                <span className="text-emerald-700 dark:text-emerald-400 font-bold text-sm">{product.price} ₽</span>
+                                                <span className="text-[10px] text-slate-400">за {product.unit}</span>
+                                            </div>
+                                            
+                                            {cart[product.id] ? (
+                                                <div className="flex items-center bg-slate-900 dark:bg-emerald-600 rounded-lg p-1 shadow-md">
+                                                    <button onClick={() => removeFromCart(product.id)} className="text-white p-1.5"><Icons.Minus size={14} /></button>
+                                                    <span className="text-white text-xs font-bold mx-1.5 min-w-[14px] text-center">{cart[product.id]}</span>
+                                                    <button onClick={() => addToCart(product.id)} className="text-white p-1.5"><Icons.Plus size={14} /></button>
+                                                </div>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => addToCart(product.id)}
+                                                    className="bg-slate-100 dark:bg-slate-700 hover:bg-emerald-500 hover:text-white dark:text-white text-slate-900 p-2.5 rounded-xl transition shadow-sm"
+                                                >
+                                                    <Icons.Plus size={18} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="col-span-2 text-center py-10 text-slate-400">
+                                <p>В этой категории пока пусто 🌱</p>
+                            </div>
                         )}
-                        <div className={`aspect-square rounded-xl ${product.color} flex items-center justify-center mb-3 text-5xl transition-transform group-hover:scale-105`}>
-                        {product.image}
-                        </div>
-                        
-                        <div className="flex-grow flex flex-col justify-between">
-                        <div>
-                            <h3 className="font-bold text-slate-800 text-sm leading-tight mb-1">{product.name}</h3>
-                            <p className="text-[10px] text-slate-400 line-clamp-2 mb-2">{product.description}</p>
-                        </div>
-                        
-                        <div className="flex justify-between items-center mt-2">
-                            <div className="flex flex-col">
-                            <span className="text-emerald-700 font-bold text-sm">{product.price} ₽</span>
-                            <span className="text-[10px] text-slate-400">за {product.unit}</span>
-                            </div>
-                            
-                            {cart[product.id] ? (
-                            <div className="flex items-center bg-slate-900 rounded-lg p-1 shadow-md">
-                                <button onClick={() => removeFromCart(product.id)} className="text-white p-1.5 hover:text-emerald-300 transition"><Icons.Minus size={14} /></button>
-                                <span className="text-white text-xs font-bold mx-1.5 min-w-[14px] text-center">{cart[product.id]}</span>
-                                <button onClick={() => addToCart(product.id)} className="text-white p-1.5 hover:text-emerald-300 transition"><Icons.Plus size={14} /></button>
-                            </div>
-                            ) : (
-                            <button 
-                                onClick={() => addToCart(product.id)}
-                                className="bg-slate-100 hover:bg-emerald-500 hover:text-white text-slate-900 p-2.5 rounded-xl transition shadow-sm active:scale-90"
-                            >
-                                <Icons.Plus size={18} />
-                            </button>
-                            )}
-                        </div>
-                        </div>
                     </div>
-                    ))}
-                </div>
                 </ViewContainer>
             );
 
+            // 3. ТУРИЗМ
             const TourismView = () => (
                 <ViewContainer className="pb-28">
-                <div className="relative h-80 bg-slate-900">
-                    <div className="absolute inset-0 bg-gray-800 bg-cover bg-center opacity-60" style={{backgroundImage: "url('https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80')"}}></div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent flex flex-col justify-end p-6">
-                    <span className="text-emerald-400 text-xs font-bold tracking-widest uppercase mb-2 border border-emerald-400/30 inline-block w-fit px-2 py-1 rounded">Скоро открытие</span>
-                    <h2 className="text-white text-4xl font-bold mb-1">Эко-Край Тур</h2>
-                    <p className="text-slate-300 text-sm">Ваш личный ретрит на реке Паша</p>
+                    <div className="relative h-72 bg-slate-900">
+                        <div className="absolute inset-0 bg-gray-800 bg-cover bg-center opacity-60" style={{backgroundImage: "url('https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80')"}}></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-gray-100 dark:from-black via-slate-900/40 to-transparent flex flex-col justify-end p-6">
+                            <span className="text-emerald-400 text-xs font-bold tracking-widest uppercase mb-2 border border-emerald-400/30 inline-block w-fit px-2 py-1 rounded backdrop-blur-sm">Скоро открытие</span>
+                            <h2 className="text-white text-3xl font-bold mb-1 drop-shadow-md">Эко-Край Тур</h2>
+                            <p className="text-slate-200 text-sm font-medium">Перезагрузка на реке Паша</p>
+                        </div>
                     </div>
-                </div>
 
-                <div className="px-4 -mt-6 relative z-10 space-y-6">
-                    {/* Loyalty Card */}
-                    <div className="bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
-                    <div className="flex justify-between items-start mb-4">
+                    <div className="px-4 -mt-6 relative z-10 space-y-6">
+                        <div className="bg-white dark:bg-darkcard p-6 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 className="font-bold text-slate-900 dark:text-white text-lg">B2B Лояльность</h3>
+                                    <p className="text-slate-500 text-xs mt-1">Отдых за бонусы от заказов</p>
+                                </div>
+                                <div className="bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-400 p-2 rounded-lg">
+                                    <Icons.Star size={20} fill="currentColor" className="opacity-75" />
+                                </div>
+                            </div>
+                            
+                            <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 mb-4 overflow-hidden">
+                                <div className="bg-emerald-500 h-full w-1/3 rounded-full"></div>
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Копите баллы и бронируйте глэмпинг бесплатно.</p>
+                            
+                            <button className="w-full py-2.5 rounded-xl border-2 border-slate-900 dark:border-slate-600 text-slate-900 dark:text-white font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                                Правила программы
+                            </button>
+                        </div>
+
                         <div>
-                            <h3 className="font-bold text-slate-900 text-lg">Программа лояльности</h3>
-                            <p className="text-slate-500 text-xs mt-1">Только для партнеров B2B</p>
+                            <h3 className="font-bold text-slate-800 dark:text-white text-lg mb-4 px-2">Активности</h3>
+                            <div className="flex overflow-x-auto space-x-3 pb-4 scrollbar-hide px-2">
+                                {[
+                                    { title: 'Глэмпинг', img: '🏕️', color: 'bg-orange-100' },
+                                    { title: 'Рыбалка', img: '🎣', color: 'bg-blue-100' },
+                                    { title: 'Сап-борды', img: '🏄', color: 'bg-teal-100' },
+                                    { title: 'Ужины', img: '🍽️', color: 'bg-purple-100' }
+                                ].map((item, i) => (
+                                    <div key={i} className={`min-w-[120px] h-32 ${item.color} rounded-2xl relative p-3 flex flex-col justify-between border border-black/5 shadow-sm active:scale-95 transition-transform`}>
+                                        <span className="text-3xl">{item.img}</span>
+                                        <span className="font-bold text-slate-800 text-sm">{item.title}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                        <div className="bg-emerald-100 text-emerald-800 p-2 rounded-lg">
-                            <Icons.Star size={20} fill="currentColor" className="opacity-75" />
-                        </div>
                     </div>
-                    
-                    <div className="w-full bg-slate-100 rounded-full h-2 mb-4 overflow-hidden">
-                        <div className="bg-emerald-500 h-full w-1/3 rounded-full"></div>
-                    </div>
-                    <p className="text-xs text-slate-500 mb-4">Накопите баллы за заказы зелени и получите бесплатные выходные в глэмпинге.</p>
-                    
-                    <button className="w-full py-2.5 rounded-xl border-2 border-slate-900 text-slate-900 font-bold text-sm hover:bg-slate-50 transition">
-                        Подробнее о баллах
-                    </button>
-                    </div>
-
-                    {/* Activities */}
-                    <div>
-                    <h3 className="font-bold text-slate-800 text-lg mb-4 px-2">Чем заняться?</h3>
-                    <div className="flex overflow-x-auto space-x-3 pb-4 scrollbar-hide px-2">
-                        {[
-                        { title: 'Глэмпинг', img: '🏕️', color: 'bg-orange-100' },
-                        { title: 'Рыбалка', img: '🎣', color: 'bg-blue-100' },
-                        { title: 'Сап-борды', img: '🏄', color: 'bg-teal-100' },
-                        { title: 'Ужины', img: '🍽️', color: 'bg-purple-100' }
-                        ].map((item, i) => (
-                        <div key={i} className={`min-w-[120px] h-32 ${item.color} rounded-2xl relative p-3 flex flex-col justify-between border border-black/5 shadow-sm active:scale-95 transition-transform`}>
-                            <span className="text-3xl">{item.img}</span>
-                            <span className="font-bold text-slate-800 text-sm">{item.title}</span>
-                        </div>
-                        ))}
-                    </div>
-                    </div>
-                </div>
                 </ViewContainer>
             );
 
+            // 4. СТРАНИЦА ДЕГУСТАЦИИ (НОВАЯ)
+            const TastingView = () => (
+                <ViewContainer className="pb-28 pt-6 px-4">
+                     <div className="flex items-center mb-6">
+                        <button onClick={() => setActiveTab('home')} className="p-2 -ml-2 text-slate-500 dark:text-slate-400">
+                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        </button>
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white ml-2">Дегустация</h2>
+                     </div>
+
+                     <div className="bg-white dark:bg-darkcard rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                         <div className="flex justify-center mb-6">
+                            <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center text-4xl">🎁</div>
+                         </div>
+                         <h3 className="text-lg font-bold text-slate-900 dark:text-white text-center mb-2">Набор для Шефа</h3>
+                         <p className="text-sm text-slate-500 dark:text-slate-400 text-center mb-6">
+                             Мы соберем для вас 3 вида популярной микрозелени, чтобы вы могли оценить вкус и качество перед заказом.
+                         </p>
+
+                         <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert('Заявка отправлена! Менеджер свяжется с вами.'); setActiveTab('home'); }}>
+                             <div>
+                                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Название заведения</label>
+                                 <input type="text" placeholder="Ресторан &quot;Вкус&quot;" className="w-full p-3 rounded-xl bg-gray-50 dark:bg-slate-800 border-none text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500" required />
+                             </div>
+                             <div>
+                                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Контактное лицо</label>
+                                 <input type="text" placeholder="Имя Шефа или Су-шефа" className="w-full p-3 rounded-xl bg-gray-50 dark:bg-slate-800 border-none text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500" required />
+                             </div>
+                             <div>
+                                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Телефон</label>
+                                 <input type="tel" placeholder="+7 (999) 000-00-00" className="w-full p-3 rounded-xl bg-gray-50 dark:bg-slate-800 border-none text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500" required />
+                             </div>
+                             <button type="submit" className="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg mt-4">
+                                 Отправить заявку
+                             </button>
+                         </form>
+                     </div>
+                </ViewContainer>
+            );
+
+            // 5. ПРОФИЛЬ (НОВАЯ)
+            const ProfileView = () => (
+                <ViewContainer className="pb-28 pt-6 px-4">
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Профиль</h2>
+                    
+                    {/* User Card */}
+                    <div className="bg-white dark:bg-darkcard rounded-2xl p-4 flex items-center space-x-4 shadow-sm mb-6 border border-slate-100 dark:border-slate-800">
+                        <div className="w-16 h-16 bg-gray-200 dark:bg-slate-700 rounded-full flex items-center justify-center text-gray-400">
+                            <Icons.User size={32} />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-white">Гость</h3>
+                            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Статус: Новый партнер</p>
+                        </div>
+                    </div>
+
+                    {/* Menu */}
+                    <div className="space-y-3">
+                        <div className="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 ml-1">Компания</h3>
+                            <div className="space-y-4">
+                                <div className="flex items-center space-x-3 text-slate-700 dark:text-slate-200">
+                                    <Icons.Phone size={20} className="text-emerald-500" />
+                                    <span>+7 (812) 999-00-00</span>
+                                </div>
+                                <div className="flex items-center space-x-3 text-slate-700 dark:text-slate-200">
+                                    <Icons.Mail size={20} className="text-emerald-500" />
+                                    <span>zakaz@eco-kray.ru</span>
+                                </div>
+                                <div className="flex items-center space-x-3 text-slate-700 dark:text-slate-200">
+                                    <Icons.Map size={20} className="text-emerald-500" />
+                                    <span>СПб, наб. Обводного канала, 100</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-darkcard rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase mb-3 ml-1">Документы</h3>
+                             <button className="flex items-center justify-between w-full py-2 text-slate-700 dark:text-slate-200">
+                                 <div className="flex items-center space-x-3">
+                                     <Icons.Briefcase size={20} className="text-blue-500" />
+                                     <span>Договор оферты</span>
+                                 </div>
+                                 <Icons.ChevronRight size={16} className="text-slate-400" />
+                             </button>
+                        </div>
+                    </div>
+                    
+                    <button className="w-full mt-8 py-3 text-red-500 text-sm font-bold bg-red-50 dark:bg-red-900/20 rounded-xl">
+                        Выйти из аккаунта
+                    </button>
+                </ViewContainer>
+            );
+
+            // --- МОДАЛКА КОРЗИНЫ ---
             const CartModal = () => {
                 if (!isCartOpen) return null;
                 return (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white w-full max-w-md h-[85vh] sm:h-auto sm:rounded-3xl rounded-t-3xl flex flex-col shadow-2xl animate-slide-up">
-                    
-                    {/* Modal Header */}
-                    <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-3xl">
-                        <h2 className="text-xl font-bold text-slate-900">Ваш заказ</h2>
-                        <button onClick={() => setIsCartOpen(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition">
-                            <Icons.X size={20} className="text-slate-600" />
-                        </button>
-                    </div>
-
-                    {/* Modal Body */}
-                    <div className="flex-grow overflow-y-auto p-4 space-y-4">
-                        {orderSent ? (
-                            <div className="h-full flex flex-col items-center justify-center text-center py-10">
-                                <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 mb-6 animate-bounce">
-                                <Icons.CheckCircle size={40} />
-                                </div>
-                                <h3 className="text-2xl font-bold text-slate-900 mb-2">Заказ отправлен!</h3>
-                                <p className="text-slate-500 max-w-[250px]">Менеджер свяжется с вами в Telegram в течение 5 минут для подтверждения.</p>
+                    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
+                        <div className="bg-white dark:bg-darkcard w-full max-w-md h-[85vh] sm:h-auto sm:max-h-[80vh] sm:rounded-3xl rounded-t-3xl flex flex-col shadow-2xl animate-slide-up">
+                            {/* Header */}
+                            <div className="p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center rounded-t-3xl">
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Ваш заказ</h2>
+                                <button onClick={() => setIsCartOpen(false)} className="p-2 bg-gray-100 dark:bg-slate-700 rounded-full hover:bg-gray-200 transition">
+                                    <Icons.X size={20} className="text-slate-600 dark:text-slate-300" />
+                                </button>
                             </div>
-                        ) : (
-                            Object.entries(cart).map(([id, qty]) => {
-                                const product = products.find(p => p.id === parseInt(id));
-                                if(!product) return null;
-                                return (
-                                <div key={id} className="flex items-center justify-between bg-gray-50 p-3 rounded-xl">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="text-2xl">{product.image}</div>
-                                        <div>
-                                            <div className="font-bold text-slate-900 text-sm">{product.name}</div>
-                                            <div className="text-emerald-600 font-semibold text-xs">{product.price * qty} ₽</div>
+
+                            {/* Body */}
+                            <div className="flex-grow overflow-y-auto p-4 space-y-4">
+                                {orderSent ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-center py-10">
+                                        <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-6 animate-bounce">
+                                            <Icons.CheckCircle size={40} />
                                         </div>
+                                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Заказ отправлен!</h3>
+                                        <p className="text-slate-500 dark:text-slate-400 max-w-[250px]">Менеджер свяжется с вами в Telegram в течение 5 минут для подтверждения.</p>
                                     </div>
-                                    <div className="flex items-center bg-white rounded-lg border border-gray-200 shadow-sm">
-                                        <button onClick={() => removeFromCart(product.id)} className="p-2 text-slate-400 hover:text-slate-600"><Icons.Minus size={14} /></button>
-                                        <span className="font-bold text-sm w-6 text-center">{qty}</span>
-                                        <button onClick={() => addToCart(product.id)} className="p-2 text-slate-400 hover:text-slate-600"><Icons.Plus size={14} /></button>
-                                    </div>
-                                </div>
-                                );
-                            })
-                        )}
-                    </div>
+                                ) : (
+                                    Object.entries(cart).map(([id, qty]) => {
+                                        const product = products.find(p => p.id === parseInt(id));
+                                        if(!product) return null;
+                                        return (
+                                            <div key={id} className="flex items-center justify-between bg-gray-50 dark:bg-slate-800 p-3 rounded-xl">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="text-2xl">{product.image}</div>
+                                                    <div>
+                                                        <div className="font-bold text-slate-900 dark:text-white text-sm">{product.name}</div>
+                                                        <div className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs">{product.price * qty} ₽</div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center bg-white dark:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600 shadow-sm">
+                                                    <button onClick={() => removeFromCart(product.id)} className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-300"><Icons.Minus size={14} /></button>
+                                                    <span className="font-bold text-sm w-6 text-center text-slate-900 dark:text-white">{qty}</span>
+                                                    <button onClick={() => addToCart(product.id)} className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-300"><Icons.Plus size={14} /></button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
 
-                    {/* Modal Footer */}
-                    {!orderSent && (
-                        <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-3xl">
-                            <div className="flex justify-between items-center mb-4 text-slate-600 text-sm">
-                                <span>Итого товаров:</span>
-                                <span className="font-bold text-slate-900">{totalItems} шт</span>
-                            </div>
-                            <div className="flex justify-between items-center mb-6 text-lg">
-                                <span className="font-bold text-slate-900">Итого:</span>
-                                <span className="font-bold text-emerald-600 text-xl">{totalPrice} ₽</span>
-                            </div>
-                            <button 
-                                onClick={handleOrder}
-                                className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl flex items-center justify-center space-x-2 hover:bg-slate-800 transition shadow-lg active:scale-[0.98]"
-                            >
-                                <span>Отправить в Telegram</span>
-                                <Icons.Send size={18} />
-                            </button>
+                            {/* Footer */}
+                            {!orderSent && (
+                                <div className="p-4 border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 rounded-b-3xl">
+                                    <div className="flex justify-between items-center mb-4 text-slate-600 dark:text-slate-400 text-sm">
+                                        <span>Итого товаров:</span>
+                                        <span className="font-bold text-slate-900 dark:text-white">{totalItems} шт</span>
+                                    </div>
+                                    <div className="flex justify-between items-center mb-6 text-lg">
+                                        <span className="font-bold text-slate-900 dark:text-white">Итого:</span>
+                                        <span className="font-bold text-emerald-600 dark:text-emerald-400 text-xl">{totalPrice} ₽</span>
+                                    </div>
+                                    <button 
+                                        onClick={handleOrder}
+                                        className="w-full bg-slate-900 dark:bg-emerald-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center space-x-2 hover:bg-slate-800 transition shadow-lg active:scale-[0.98]"
+                                    >
+                                        <span>Отправить в Telegram</span>
+                                        <Icons.Send size={18} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    )}
                     </div>
-                </div>
                 );
             };
 
+            // --- ОСНОВНАЯ СТРУКТУРА ---
             return (
-                <div className="w-full max-w-md h-full sm:h-[850px] bg-white sm:rounded-[40px] shadow-2xl overflow-hidden relative border-8 border-slate-900 sm:border-slate-800 ring-8 ring-slate-900/10 flex flex-col">
+                <div className="w-full max-w-md mx-auto bg-white dark:bg-black min-h-screen relative shadow-2xl flex flex-col">
                     
-                    {/* Status Bar Mockup */}
-                    <div className="bg-slate-900 text-white px-6 py-3 flex justify-between items-center text-xs font-medium sticky top-0 z-40 shrink-0">
-                    <span>12:45</span>
-                    <div className="flex space-x-1.5">
-                        <div className="w-4 h-4 rounded-full bg-slate-800 flex items-center justify-center text-[8px]">5G</div>
-                        <div className="w-6 h-3 bg-white rounded-sm"></div>
-                    </div>
-                    </div>
-
-                    {/* Top Header */}
-                    <header className="bg-white/90 backdrop-blur-md px-4 py-4 flex justify-between items-center sticky top-0 z-30 border-b border-gray-100 shrink-0">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-extrabold shadow-emerald-200 shadow-md">Э</div>
-                        <div>
-                            <span className="block font-bold text-sm text-slate-900 leading-none">Эко-Край</span>
-                            <span className="text-[10px] text-slate-400 font-medium tracking-wide">B2B FARM</span>
+                    {/* Header */}
+                    <header className="bg-white/90 dark:bg-black/90 backdrop-blur-md px-4 py-3 flex justify-between items-center sticky top-0 z-30 border-b border-gray-100 dark:border-slate-800">
+                        <Logo />
+                        <div className="flex items-center gap-3">
+                            <button onClick={toggleTheme} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-600 dark:text-yellow-400 transition">
+                                {theme === 'light' ? <Icons.Moon size={18} /> : <Icons.Sun size={18} />}
+                            </button>
+                            <button onClick={() => setActiveTab('profile')} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full relative hover:bg-slate-200 transition">
+                                <Icons.User size={18} className="text-slate-700 dark:text-white" />
+                            </button>
                         </div>
-                    </div>
-                    <button className="bg-slate-50 p-2.5 rounded-full relative hover:bg-slate-100 transition">
-                        <Icons.User size={18} className="text-slate-700" />
-                    </button>
                     </header>
 
-                    {/* Scrollable Area */}
-                    <main className="flex-grow overflow-y-auto bg-white scrollbar-hide relative">
-                    {activeTab === 'home' && <HomeView />}
-                    {activeTab === 'catalog' && <CatalogView />}
-                    {activeTab === 'tourism' && <TourismView />}
+                    {/* Content */}
+                    <main className="flex-grow overflow-y-auto bg-white dark:bg-black scrollbar-hide">
+                        {activeTab === 'home' && <HomeView />}
+                        {activeTab === 'catalog' && <CatalogView />}
+                        {activeTab === 'tourism' && <TourismView />}
+                        {activeTab === 'tasting' && <TastingView />}
+                        {activeTab === 'profile' && <ProfileView />}
                     </main>
 
                     {/* Floating Cart Button */}
-                    {totalItems > 0 && !isCartOpen && (
-                    <div className="absolute bottom-24 left-4 right-4 z-40 animate-slide-up">
-                        <button 
-                        onClick={() => setIsCartOpen(true)}
-                        className="w-full bg-slate-900 text-white p-4 rounded-2xl shadow-xl shadow-slate-900/20 flex justify-between items-center hover:bg-slate-800 transition transform active:scale-[0.98]"
-                        >
-                        <div className="flex items-center space-x-3">
-                            <div className="bg-slate-800 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm text-emerald-400">
-                                {totalItems}
-                            </div>
-                            <div className="flex flex-col items-start">
-                                <span className="text-xs text-slate-400 font-medium">Сумма заказа</span>
-                                <span className="font-bold text-sm">{totalPrice} ₽</span>
-                            </div>
+                    {totalItems > 0 && !isCartOpen && activeTab !== 'tasting' && activeTab !== 'profile' && (
+                        <div className="fixed bottom-24 left-0 right-0 max-w-md mx-auto px-4 z-40 animate-slide-up">
+                            <button 
+                                onClick={() => setIsCartOpen(true)}
+                                className="w-full bg-slate-900 dark:bg-emerald-600 text-white p-4 rounded-2xl shadow-xl shadow-slate-900/20 flex justify-between items-center hover:bg-slate-800 transition transform active:scale-[0.98]"
+                            >
+                                <div className="flex items-center space-x-3">
+                                    <div className="bg-slate-800 dark:bg-emerald-700 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm text-emerald-400 dark:text-white">
+                                        {totalItems}
+                                    </div>
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-xs text-slate-400 dark:text-emerald-100 font-medium">Сумма заказа</span>
+                                        <span className="font-bold text-sm">{totalPrice} ₽</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center font-bold text-sm text-emerald-400 dark:text-white">
+                                    <span>К заказу</span>
+                                    <Icons.ChevronRight size={16} className="ml-1" />
+                                </div>
+                            </button>
                         </div>
-                        <div className="flex items-center font-bold text-sm text-emerald-400">
-                            <span>К заказу</span>
-                            <Icons.ChevronRight size={16} className="ml-1" />
-                        </div>
-                        </button>
-                    </div>
                     )}
 
-                    {/* Modal Overlay */}
                     <CartModal />
 
                     {/* Bottom Navigation */}
-                    <nav className="shrink-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 flex justify-around items-center pb-6 pt-3 px-4 z-30">
-                    <button 
-                        onClick={() => setActiveTab('home')}
-                        className={`flex flex-col items-center space-y-1 p-2 w-16 transition-colors ${activeTab === 'home' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}
-                    >
-                        <Icons.Leaf size={24} strokeWidth={activeTab === 'home' ? 2.5 : 2} className={activeTab === 'home' ? 'drop-shadow-sm' : ''} />
-                        <span className="text-[10px] font-medium">Ферма</span>
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('catalog')}
-                        className={`flex flex-col items-center space-y-1 p-2 w-16 transition-colors ${activeTab === 'catalog' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}
-                    >
-                        <Icons.ShoppingBag size={24} strokeWidth={activeTab === 'catalog' ? 2.5 : 2} className={activeTab === 'catalog' ? 'drop-shadow-sm' : ''} />
-                        <span className="text-[10px] font-medium">Каталог</span>
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('tourism')}
-                        className={`flex flex-col items-center space-y-1 p-2 w-16 transition-colors ${activeTab === 'tourism' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}
-                    >
-                        <Icons.Map size={24} strokeWidth={activeTab === 'tourism' ? 2.5 : 2} className={activeTab === 'tourism' ? 'drop-shadow-sm' : ''} />
-                        <span className="text-[10px] font-medium">Эко-Тур</span>
-                    </button>
-                    <button 
-                        className={`flex flex-col items-center space-y-1 p-2 w-16 text-slate-400 hover:text-slate-600 transition-colors`}
-                    >
-                        <Icons.Phone size={24} strokeWidth={2} />
-                        <span className="text-[10px] font-medium">Инфо</span>
-                    </button>
+                    <nav className="shrink-0 bg-white/95 dark:bg-black/95 backdrop-blur-xl border-t border-gray-100 dark:border-slate-800 flex justify-around items-center pb-6 pt-3 px-2 z-30 sticky bottom-0">
+                        <button 
+                            onClick={() => setActiveTab('home')}
+                            className={`flex flex-col items-center space-y-1 p-2 w-16 transition-colors ${activeTab === 'home' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-600'}`}
+                        >
+                            <Icons.Leaf size={24} strokeWidth={activeTab === 'home' ? 2.5 : 2} />
+                            <span className="text-[10px] font-medium">Ферма</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('catalog')}
+                            className={`flex flex-col items-center space-y-1 p-2 w-16 transition-colors ${activeTab === 'catalog' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-600'}`}
+                        >
+                            <Icons.ShoppingBag size={24} strokeWidth={activeTab === 'catalog' ? 2.5 : 2} />
+                            <span className="text-[10px] font-medium">Каталог</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('tourism')}
+                            className={`flex flex-col items-center space-y-1 p-2 w-16 transition-colors ${activeTab === 'tourism' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-600'}`}
+                        >
+                            <Icons.Map size={24} strokeWidth={activeTab === 'tourism' ? 2.5 : 2} />
+                            <span className="text-[10px] font-medium">Эко-Тур</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('profile')}
+                            className={`flex flex-col items-center space-y-1 p-2 w-16 transition-colors ${activeTab === 'profile' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-600'}`}
+                        >
+                            <Icons.Phone size={24} strokeWidth={activeTab === 'profile' ? 2.5 : 2} />
+                            <span className="text-[10px] font-medium">Профиль</span>
+                        </button>
                     </nav>
                 </div>
             );
